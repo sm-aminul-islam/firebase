@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_demo/Widgets/round_button.dart';
+import 'package:firebase_demo/ui/Auth/posts/post_screen.dart';
 import 'package:firebase_demo/ui/Auth/signup_screen.dart';
+import 'package:firebase_demo/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,12 +15,15 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   ValueNotifier<bool> _obsecurePassword = ValueNotifier<bool>(false);
+  bool loading = false;
 
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
   FocusNode _emailfocusNode = FocusNode();
   FocusNode _passwordfocusNode = FocusNode();
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void dispose() {
@@ -30,10 +36,37 @@ class _LoginScreenState extends State<LoginScreen> {
     _obsecurePassword.dispose();
   }
 
+  void login() {
+    setState(() {
+      loading = true;
+    });
+    _auth
+        .signInWithEmailAndPassword(
+            email: emailController.text.toString(),
+            password: passwordController.text.toString())
+        .then((value) {
+      setState(() {
+        loading = false;
+      });
+      Utils().toastMessagae(value.user!.email.toString());
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PostScreen(),
+        ),
+      );
+    }).onError((error, stackTrace) {
+      debugPrint(error.toString());
+      Utils().toastMessagae(error.toString());
+      setState(() {
+        loading = false;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: ()async{
+      onWillPop: () async {
         SystemNavigator.pop();
         return true;
       },
@@ -79,7 +112,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: Icon(Icons.lock_open_outlined),
                         suffixIcon: InkWell(
                             onTap: () {
-                              _obsecurePassword.value = !_obsecurePassword.value;
+                              _obsecurePassword.value =
+                                  !_obsecurePassword.value;
                             },
                             child: _obsecurePassword.value
                                 ? Icon(Icons.visibility_off_outlined)
@@ -90,17 +124,28 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 height: 10,
               ),
-              RoundButton(title: 'Login', ontap: () {}),
-              SizedBox(height: 30,),
+              RoundButton(
+                  loading: loading,
+                  title: 'Login',
+                  ontap: () {
+                    login();
+                  }),
+              SizedBox(
+                height: 30,
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-
-                Text("Don't have an account??"),
-                TextButton(onPressed: (){
-                 Navigator.of(context).push(MaterialPageRoute(builder: (context)=>SignUpScreen()));
-                }, child: Text("SignUp"),),
-              ],)
+                  Text("Don't have an account??"),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => SignUpScreen()));
+                    },
+                    child: Text("SignUp"),
+                  ),
+                ],
+              )
             ],
           ),
         ),

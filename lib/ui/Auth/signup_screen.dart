@@ -1,6 +1,8 @@
 import 'package:firebase_demo/Widgets/round_button.dart';
 import 'package:firebase_demo/ui/Auth/login_screen.dart';
+import 'package:firebase_demo/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -10,6 +12,7 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  bool loading = false;
   ValueNotifier<bool> _obsecurePassword = ValueNotifier<bool>(false);
 
   TextEditingController emailController = TextEditingController();
@@ -17,6 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   FocusNode _emailfocusNode = FocusNode();
   FocusNode _passwordfocusNode = FocusNode();
+  FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void dispose() {
@@ -27,6 +31,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailfocusNode.dispose();
     _passwordfocusNode.dispose();
     _obsecurePassword.dispose();
+  }
+
+  void login() {
+    setState(() {
+      loading = true;
+    });
+    _auth
+        .createUserWithEmailAndPassword(
+            email: emailController.text.toString(),
+            password: passwordController.text.toString())
+        .then((value) {
+      setState(() {
+        loading = false;
+      });
+    }).onError((error, stackTrace) {
+      Utils().toastMessagae(error.toString());
+      setState(() {
+        loading = false;
+      });
+    });
   }
 
   @override
@@ -83,7 +107,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
             SizedBox(
               height: 10,
             ),
-            RoundButton(title: 'SignUp', ontap: () {}),
+            RoundButton(
+                loading: loading,
+                title: 'SignUp',
+                ontap: () {
+                  login();
+                }),
             SizedBox(
               height: 30,
             ),
